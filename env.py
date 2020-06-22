@@ -1,6 +1,13 @@
 import numpy as np
 
 def epsilon_greedy(Q, n_actions, epsilon):
+    """
+    Epsilon-greedy algorithm.
+    @param Q game state representation table
+    @param n_actions number of choices
+    @param epsilon chance that greedy action isn't taken
+    @return action
+    """
     if np.random.rand() < epsilon:
         return np.random.randint(n_actions)
     else:
@@ -8,6 +15,11 @@ def epsilon_greedy(Q, n_actions, epsilon):
         return amax if amax <= n_max else n_max
 
 def decay(eps):
+    """
+    Epsilon decay.
+    @param eps epsilon value to decay
+    @return decayed version of eps unless eps is too small
+    """
     decay, min_bound = .995, .001
     new_eps = eps * decay
     
@@ -24,6 +36,10 @@ class ConnectFour:
         self.winner,  self.done = 'None', False
 
     def init_positions(self):
+        """
+        Initializes all board positions.
+        @return dict/map of positions
+        """
         positions, pos_id = {}, 1
         
         for col in range(self.columns):
@@ -34,6 +50,10 @@ class ConnectFour:
         return positions
 
     def get_state(self):
+        """
+        Gets discrete state representation of game board.
+        @return state
+        """
         state_values = np.zeros((self.columns, self.rows))
 
         for col in range(self.columns):
@@ -48,6 +68,13 @@ class ConnectFour:
         return state
 
     def insert(self, position, player, verbose=False):
+        """
+        Inserts a piece into the board for said player.
+        @param position the coordinate where a piece is to be placed
+        @param player the player inserting the piece
+        @param verbose if True, logs the information
+        @return True if insertion was successful
+        """
         if verbose:
             print('Inserting into position {}'.format(position))
 
@@ -59,6 +86,12 @@ class ConnectFour:
             return False
 
     def on_board(self, player_pos, coords):
+        """
+        Takes in array of coordinates and determines whether player has all pieces.
+        @param player_pos position of player to check
+        @param coords array of coordinates
+        @return True or False
+        """
         is_on_board = True
 
         for coord in coords:
@@ -67,6 +100,11 @@ class ConnectFour:
         return is_on_board
 
     def is_winner(self, player):
+        """
+        Checks diagonals, horizontal and vertical conditions for game win (for player).
+        @param player the determinant player
+        @return True if player has won game
+        """
         player_pos = self.players.index(player) + 1
 
         for col in range(3, self.columns):
@@ -79,13 +117,13 @@ class ConnectFour:
 
         for col in range(self.columns):
             for row in range(0, self.rows-3):
-                right = self.on_board(player_pos, [(col, row), (col, row+1), (col, row+2), (col, row+3)])
+                horizontal = self.on_board(player_pos, [(col, row), (col, row+1), (col, row+2), (col, row+3)])
 
         for col in range(0, self.columns-3):
             for row in range(self.rows):
-                up = self.on_board(player_pos, [(col, row), (col+1, row), (col+2, row), (col+3, row)])
+                vertical = self.on_board(player_pos, [(col, row), (col+1, row), (col+2, row), (col+3, row)])
 
-        is_winner = right_diag or left_diag or right or up
+        is_winner = right_diag or left_diag or horizontal or vertical
 
         if is_winner:
             self.winner = player
@@ -93,6 +131,10 @@ class ConnectFour:
         return is_winner
     
     def is_tie(self):
+        """
+        Checks if the board is full (tie game).
+        @return True if the game ends in a tie
+        """
         is_tie = np.amin(self.board.flatten()) != 0
 
         if is_tie:
@@ -101,11 +143,20 @@ class ConnectFour:
         return is_tie
 
     def reset(self):
+        """
+        Resets game to initial state.
+        """
         self.board = np.zeros((self.columns, self.rows), dtype=int)
         self.stacks = np.ones((self.columns), dtype=int) * self.rows - 1
         self.winner, self.done = None, False
 
     def step(self, actions, policy=None):
+        """
+        Gym env-like step method. Takes an in-game step for each player.
+        @param actions ordered array of actions for each player to take
+        @param policy policy to determine actions if insertion fails
+        @return np array of rewards, array of actions, done, info
+        """
         if policy is None:
             policy = np.random.randint
 
@@ -133,6 +184,11 @@ class ConnectFour:
         return rewards, self.get_state(), actions, self.done, self.info(rewards)
 
     def info(self, rewards):
+        """
+        Provides in-game information including game state and rewards.
+        @param rewards rewards from last step
+        @return formatted information
+        """
         info = 'Info:'
         info += '\nState: {}'.format(self.get_state())
         info += '\nRewards: {}'.format(rewards)
@@ -140,6 +196,9 @@ class ConnectFour:
         return info
 
     def render(self):
+        """
+        Renders game state.
+        """
         board, players = '', ['None'] + self.players
 
         print('~*~ Connect 4 ~*~')
