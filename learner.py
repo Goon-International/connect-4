@@ -9,6 +9,16 @@ class QLearner:
         self.Q = np.zeros((self.n_states, self.n_actions))
 
     def learn(self, matches, epsilon=1., winners=None, policy=None, render=False, interval=1,):
+        """
+        Learns env game over the number of matches passed in. Env designed similar to Gym env.
+        @param matches number of episodes
+        @param epsilon value for e-greedy alg.
+        @param winners map/dict containing number of wins for each player
+        @param policy policy that determines actions
+        @param render if True displays end game state
+        @param interval frequency of rendering
+        @return Q table after matches have been played, winners map/dict
+        """
         winners = { 'None': 0 }
 
         if policy is None:
@@ -50,6 +60,16 @@ class DoubleQLearner:
         self.Qf = np.zeros((self.n_states, self.n_actions))
 
     def learn(self, matches, epsilon=1., winners=None, policy=None, render=False, interval=1,):
+        """
+        Learns env game over the number of matches passed in. Env designed similar to Gym env.
+        @param matches number of episodes
+        @param epsilon value for e-greedy alg.
+        @param winners map/dict containing number of wins for each player
+        @param policy policy that determines actions
+        @param render if True displays end game state
+        @param interval frequency of rendering
+        @return Final Q table after matches have been played, winners map/dict
+        """
         winners = { 'None': 0 }
 
         if policy is None:
