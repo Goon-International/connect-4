@@ -9,7 +9,7 @@ Feel free to make PRs and suggest improvements.
 2. Install the dependencies:
     - `pip install numpy` (for Math stuff)
     - `pip install tqdm` (for progress bar)
-3. Usage: `python3 game.py`g
+3. Usage: `python3 game.py`
 
 ## Roadmap
 1. ~~Add more documentation to code~~
