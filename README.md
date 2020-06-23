@@ -9,6 +9,9 @@ Feel free to make PRs and suggest improvements.
 2. Install the dependencies:
     - `pip install numpy` (for Math stuff)
     - `pip install tqdm` (for progress bar)
+    - `pip install random` (for random.choice)
+    - `pip install os` (for file system)
+    - `pip install re` (for regex)
 3. Usage: `python3 game.py`
 
 ## Roadmap
