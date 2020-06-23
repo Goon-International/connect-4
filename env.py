@@ -1,30 +1,5 @@
 import numpy as np
 
-def epsilon_greedy(Q, n_actions, epsilon):
-    """
-    Epsilon-greedy algorithm.
-    @param Q game state representation table
-    @param n_actions number of choices
-    @param epsilon chance that greedy action isn't taken
-    @return action
-    """
-    if np.random.rand() < epsilon:
-        return np.random.randint(n_actions)
-    else:
-        amax, n_max = np.argmax(Q), n_actions - 1
-        return amax if amax <= n_max else n_max
-
-def decay(eps):
-    """
-    Epsilon decay.
-    @param eps epsilon value to decay
-    @return decayed version of eps unless eps is too small
-    """
-    decay, min_bound = .995, .001
-    new_eps = eps * decay
-    
-    return new_eps if new_eps > min_bound else min_bound
-
 class ConnectFour:
     def __init__(self, players):
         self.columns, self.rows,  = 7, 6

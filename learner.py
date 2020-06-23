@@ -1,46 +1,44 @@
-from env import *
-import os
+import random
 import numpy as np
-from tqdm import tqdm
 
-def best_player(winners, verbose=False):
+def epsilon_greedy(Q, n_actions, epsilon):
     """
-    Determines the best player in a dict/map of winners
-    @param winners dict/map of winners
-    @param verbose True if 
+    Epsilon-greedy algorithm.
+    @param Q game state representation table
+    @param n_actions number of choices
+    @param epsilon chance that greedy action isn't taken
+    @return action
     """
-    wc = winners.copy()
+    if np.random.rand() < epsilon:
+        return np.random.randint(n_actions)
+    else:
+        amax, n_max = np.argmax(Q), n_actions - 1
+        return amax if amax <= n_max else n_max
 
-    if 'None' in wc:
-        del wc['None']
-
-    best_player, best_value = None, 0
-
-    for key, value in wc.items():
-        if best_player is None:
-            best_player = key
-            best_value = value
-        
-        if value > best_value:
-            best_player = key
-            best_value = value
-
-    if verbose:
-        print('Best player: {}'.format(best_player))
-
-    return best_player
+def decay(eps):
+    """
+    Epsilon decay.
+    @param eps epsilon value to decay
+    @return decayed version of eps unless eps is too small
+    """
+    decay, min_bound = .995, .001
+    new_eps = eps * decay
+    
+    return new_eps if new_eps > min_bound else min_bound
 
 class QLearner:
     def __init__(self, env, gamma=.9, alpha=.1, Q=None):
+        self.env = env
         self.gamma, self.alpha = gamma, alpha
         self.n_states, self.n_actions = env.n_states, env.actions
+        self.Q = {}
         
         if Q is None:
-            self.Q = {}
             for player in env.players:
                 self.Q[player] = np.zeros((self.n_states, self.n_actions))
         else:
-            self.Q = Q
+            for player in env.players:
+                self.Q[player] = Q
 
     def learn(self, matches, epsilon=1., winners=None, policy=None, render=False, interval=1,):
         """
@@ -54,24 +52,24 @@ class QLearner:
         @return Q table after matches have been played, winners map/dict
         """
         winners = { 'None': 0 }
-        p1, p2 = env.players
+        p1, p2 = self.env.players
 
         if policy is None:
             policy = epsilon_greedy
 
         if winners is not None:
-            for player in env.players:
+            for player in self.env.players:
                 winners[player] = 0
 
         for match in tqdm(range(matches)):
-            done, s = False, env.reset()
+            done, s = False, self.env.reset()
 
             while not done:
                 actions = [
                     policy(Q=self.Q[p1][s], n_actions=self.n_actions, epsilon=epsilon), 
                     policy(Q=self.Q[p2][s], n_actions=self.n_actions, epsilon=epsilon)
                 ]
-                rews, s_, actions, done, _ = env.step(actions)
+                rews, s_, actions, done, _ = self.env.step(actions)
                 delta_p1 = rews[0] + self.gamma * self.Q[p1][s_, np.argmax(self.Q[p1][s_])]
                 delta_p2 = rews[1] + self.gamma * self.Q[p2][s_, np.argmax(self.Q[p2][s_])]
                 self.Q[p1][s, actions[0]] = (1 - self.alpha) * self.Q[p1][s, actions[0]] + self.alpha * delta_p1
@@ -81,11 +79,12 @@ class QLearner:
             epsilon = decay(epsilon)
 
             if winners is not None:
-                winners[env.winner] += 1
+                winners[self.env.winner] += 1
 
             if render and match % interval == 0:
-                env.render()
+                self.env.render()
 
+        print('Finished training...')
         return self.Q, winners
 
     def play(self, epsilon=.001, policy=None):
@@ -98,24 +97,26 @@ class QLearner:
         if policy is None:
             policy = epsilon_greedy
 
-        done, s = False, env.reset()
+        random_player = random.choice(self.env.players)
+        done, s = False, self.env.reset()
 
-        env.render()
+        self.env.render()
         while not done:
             actions = [
                 int(input('Choose an action: [0-6]:')),
-                policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon)
+                policy(Q=self.Q[random_player][s], n_actions=self.n_actions, epsilon=epsilon)
             ]
 
-            r_, s_, actions, done, _ = env.step(actions) 
+            r_, s_, actions, done, _ = self.env.step(actions) 
             s = s_
 
-            env.render()
+            self.env.render()
 
-        return env.winner
+        return self.env.winner
 
 class DoubleQLearner:
     def __init__(self, env, gamma=.9, alpha=.1):
+        self.env = env
         self.gamma, self.alpha = gamma, alpha
         self.n_states, self.n_actions = env.n_states, env.actions
         self.Q1 = np.zeros((self.n_states, self.n_actions))
@@ -139,11 +140,11 @@ class DoubleQLearner:
             policy = epsilon_greedy
 
         if winners is not None:
-            for player in env.players:
+            for player in self.env.players:
                 winners[player] = 0
 
         for match in tqdm(range(matches)):
-            done, s = False, env.reset()
+            done, s = False, self.env.reset()
 
             while not done:
                 self.Qf = (self.Q1 + self.Q2) / 2.
@@ -151,7 +152,7 @@ class DoubleQLearner:
                     policy(Q=self.Qf[s], n_actions=self.n_actions, epsilon=epsilon), 
                     policy(Q=self.Qf[s], n_actions=self.n_actions, epsilon=epsilon)
                 ]
-                rews, s_, actions, done, _ = env.step(actions)
+                rews, s_, actions, done, _ = self.env.step(actions)
 
                 if np.random.rand() < .5:
                     delta = rews[0] + self.gamma * self.Q1[s_, np.argmax(self.Q2[s_])]
@@ -165,31 +166,9 @@ class DoubleQLearner:
             epsilon = decay(epsilon)
 
             if winners is not None:
-                winners[env.winner] += 1
+                winners[self.env.winner] += 1
 
             if render and match % interval == 0:
-                env.render()
+                self.env.render()
 
         return self.Qf, winners
-
-if __name__ == "__main__":
-    np.random.seed(1337) # Seeding data for consistent results
-
-    players = ['P1', 'P2']
-    env = ConnectFour(players)
-    matches = 50000
-
-    # if os.path.isfile('training_data/{}.csv'.format(matches)):
-    # data = np.loadtxt('training_data/{}.csv'.format(matches), delimiter=',')
-    # else:
-    data = None
-
-    Q, winners = QLearner(env, Q=data).learn(matches=matches, winners=True)
-
-    # winners = QLearner(env, Q=data).play()
-
-    # if not os.path.isfile('training_data/{}.csv'.format(matches)):
-    np.savetxt('training_data/{}.csv'.format(matches), Q[best_player(winners)], delimiter=',')
-
-    print('Winners: {}'.format(winners))
-    print('Best player: {}'.format(best_player(winners)))
