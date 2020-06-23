@@ -11,7 +11,7 @@ A two-player Connect 4 program that plays matches betweenn two AIs. One imaginar
 
 ## Roadmap
 1. ~~Add more documentation to code~~
-2. Save AI state to resume training from previous point
-3. Introduce player vs computer (AI)
+2. ~~Save AI state to resume training from previous point~~
+3. ~~Introduce player vs computer (AI)~~
 4. Speed up mathy operations w/ NumExpr
 5. Create web UI where players can play against Connect4 bot online (and it learns from playing users)

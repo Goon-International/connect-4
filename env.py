@@ -76,7 +76,7 @@ class ConnectFour:
         @return True if insertion was successful
         """
         if verbose:
-            print('Inserting into position {}'.format(position))
+            print('Inserting into position [{}, {}]'.format(position, self.stacks[position]))
 
         if self.stacks[position] >= 0:
             self.board[position, self.stacks[position]] = self.players.index(player) + 1
@@ -107,23 +107,50 @@ class ConnectFour:
         """
         player_pos = self.players.index(player) + 1
 
-        for col in range(3, self.columns):
-            for row in range(0, 2):
-                right_diag = self.on_board(player_pos, [(col, row), (col-1, row+1), (col-2,row+2), (col-3, row+3)])
+        is_winner = False
+
+        # Right diagonal
+        for col in range(0, 4):
+            for row in reversed(range(3, self.rows)):
+                is_winner = is_winner or self.on_board(
+                    player_pos, 
+                    [(col, row), (col+1, row-1), (col+2,row-2), (col+3, row-3)]
+                )
+                if is_winner:
+                    break
         
-        for col in range(3, self.columns):
-            for row in range(0, 3):
-                left_diag = self.on_board(player_pos, [(col, row), (col-1, row-1), (col-2,row-2), (col-3, row-3)])
+        # Left diagonal
+        if not is_winner:
+            for col in reversed(range(3, self.columns)):
+                for row in reversed(range(3, self.rows)):
+                    is_winner = is_winner or self.on_board(
+                        player_pos, 
+                        [(col, row), (col-1, row-1), (col-2,row-2), (col-3, row-3)]
+                    )
+                    if is_winner:
+                        break
 
-        for col in range(self.columns):
-            for row in range(0, self.rows-3):
-                horizontal = self.on_board(player_pos, [(col, row), (col, row+1), (col, row+2), (col, row+3)])
+        # Vertical
+        if not is_winner:
+            for col in range(self.columns):
+                for row in reversed(range(3, self.rows)):
+                    is_winner = is_winner or self.on_board(
+                        player_pos, 
+                        [(col, row), (col, row-1), (col, row-2), (col, row-3)]
+                    )
+                    if is_winner:
+                        break
 
-        for col in range(0, self.columns-3):
-            for row in range(self.rows):
-                vertical = self.on_board(player_pos, [(col, row), (col+1, row), (col+2, row), (col+3, row)])
-
-        is_winner = right_diag or left_diag or horizontal or vertical
+        # Horizontal
+        if not is_winner:
+            for col in range(0, 4):
+                for row in range(self.rows):
+                    is_winner = is_winner or self.on_board(
+                        player_pos, 
+                        [(col, row), (col+1, row), (col+2, row), (col+3, row)]
+                    )
+                    if is_winner:
+                        break
 
         if is_winner:
             self.winner = player
@@ -150,7 +177,7 @@ class ConnectFour:
         self.stacks = np.ones((self.columns), dtype=int) * self.rows - 1
         self.winner, self.done = None, False
 
-    def step(self, actions, policy=None):
+    def step(self, actions, policy=None, verbose=False):
         """
         Gym env-like step method. Takes an in-game step for each player.
         @param actions ordered array of actions for each player to take
@@ -160,13 +187,16 @@ class ConnectFour:
         if policy is None:
             policy = np.random.randint
 
+        if verbose:
+            print('Actions: {}'.format(actions))
+
         rewards = np.ones((len(self.players))) * -.01
 
         for index, player in enumerate(self.players):
             inserted = False
 
             while not inserted:
-                if self.insert(actions[index], player):
+                if self.insert(actions[index], player, verbose):
                     inserted = True
                 else:
                     actions[index] = policy(self.actions)
@@ -197,17 +227,20 @@ class ConnectFour:
 
     def render(self):
         """
-        Renders game state.
+        Renders the current game state.
         """
         board, players = '', ['None'] + self.players
 
         print('~*~ Connect 4 ~*~')
         print('State:', self.get_state())
-        
+
         for row in range(self.rows):
             for col in range(self.columns):
                 board += '| {} |'.format(self.board[col, row])
             board += '\n'
 
+        for i in range(self.columns):
+            board += '  {}  '.format(i)
+        board += '\n'
+
         print(board)
-        print('Winner: {} ({})\n'.format(self.winner, players.index(self.winner)))
