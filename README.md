@@ -22,7 +22,7 @@ Feel free to make PRs and suggest improvements.
 4. Create web UI where players can play against Connect4 bot online (and it learns from playing users)
 
 ## Benchmarks
-    - Playing 10,000 matches takes 2m5s
-    - Playing 15,000 matches takes 2m39s
-    - Playing 25,000 matches takes 4m30s
-    - Playing 50,000 matches takes 9m16s
+- Playing 10,000 matches takes 2m5s
+- Playing 15,000 matches takes 2m39s
+- Playing 25,000 matches takes 4m30s
+g- Playing 50,000 matches takes 9m16s
