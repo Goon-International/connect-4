@@ -74,63 +74,84 @@ class ConnectFour:
         
         return is_on_board
 
-    def is_winner(self, player):
+    def is_connected(self, player, conns=4):
         """
-        Checks diagonals, horizontal and vertical conditions for game win (for player).
+        Checks diagonals, horizontal and vertical conditions for n number of connected pieces (for player).
         @param player the determinant player
-        @return True if player has won game
+        @param conns number of connections to check for
+        @return True if player has conns number of connected pieces
         """
         player_pos = self.players.index(player) + 1
+        connected = False
 
-        is_winner = False
+        # Right diag
+        for col in range(0, conns):
+            for row in reversed(range(conns-1, self.rows)):
+                joints = []
 
-        # Right diagonal
-        for col in range(0, 4):
-            for row in reversed(range(3, self.rows)):
-                is_winner = is_winner or self.on_board(
+                for n in range(conns):
+                    joints.append((col+n, row-n))
+
+                connected = connected or self.on_board(
                     player_pos, 
-                    [(col, row), (col+1, row-1), (col+2,row-2), (col+3, row-3)]
+                    joints
                 )
-                if is_winner:
+
+                if connected:
                     break
-        
-        # Left diagonal
-        if not is_winner:
-            for col in reversed(range(3, self.columns)):
-                for row in reversed(range(3, self.rows)):
-                    is_winner = is_winner or self.on_board(
+    
+        # Left diag
+        if not connected:
+            for col in reversed(range(conns-1, self.columns)):
+                for row in reversed(range(conns-1, self.rows)):
+                    joints = []
+
+                    for n in range(conns):
+                        joints.append((col-n, row-n))
+
+                    connected = connected or self.on_board(
                         player_pos, 
-                        [(col, row), (col-1, row-1), (col-2,row-2), (col-3, row-3)]
+                        joints
                     )
-                    if is_winner:
+
+                    if connected:
                         break
 
         # Vertical
-        if not is_winner:
+        if not connected:
             for col in range(self.columns):
-                for row in reversed(range(3, self.rows)):
-                    is_winner = is_winner or self.on_board(
+                for row in reversed(range(conns-1, self.rows)):
+                    joints = []
+
+                    for n in range(conns):
+                        joints.append((col, row-n))
+                    
+                    connected = connected or self.on_board(
                         player_pos, 
-                        [(col, row), (col, row-1), (col, row-2), (col, row-3)]
+                        joints
                     )
-                    if is_winner:
+
+                    if connected:
                         break
 
         # Horizontal
-        if not is_winner:
-            for col in range(0, 4):
+        if not connected:
+            for col in range(conns):
                 for row in range(self.rows):
-                    is_winner = is_winner or self.on_board(
+                    joints = []
+
+                    for n in range(conns):
+                        joints.append((col+n, row))
+                    
+                    connected = connected or self.on_board(
                         player_pos, 
-                        [(col, row), (col+1, row), (col+2, row), (col+3, row)]
+                        joints
                     )
-                    if is_winner:
+
+                    if connected:
                         break
 
-        if is_winner:
-            self.winner = player
-
-        return is_winner
+        return connected
     
     def is_tie(self):
         """
@@ -176,7 +197,8 @@ class ConnectFour:
                 else:
                     actions[index] = policy(self.actions)
             
-            if self.is_winner(player):
+            if self.is_connected(player):
+                self.winner = player
                 complement = (index + 1) % 2
                 rewards[index], rewards[complement] = 1., -1.
                 self.done = True

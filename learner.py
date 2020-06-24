@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from tqdm import tqdm
 
 def epsilon_greedy(Q, n_actions, epsilon):
     """
@@ -17,11 +18,11 @@ def epsilon_greedy(Q, n_actions, epsilon):
 
 def decay(eps):
     """
-    Epsilon decay.
+    Epsilon decay. (min_bound ETA: 1,381,548 matches)
     @param eps epsilon value to decay
     @return decayed version of eps unless eps is too small
     """
-    decay, min_bound = .995, .001
+    decay, min_bound = .999995, .001
     new_eps = eps * decay
     
     return new_eps if new_eps > min_bound else min_bound
@@ -31,14 +32,20 @@ class QLearner:
         self.env = env
         self.gamma, self.alpha = gamma, alpha
         self.n_states, self.n_actions = env.n_states, env.actions
-        self.Q = {}
+        # self.strategy, self.step = self.init_strategy(), 0
         
         if Q is None:
-            for player in env.players:
-                self.Q[player] = np.zeros((self.n_states, self.n_actions))
+            self.Q = np.zeros((self.n_states, self.n_actions))
         else:
-            for player in env.players:
-                self.Q[player] = Q
+            self.Q = Q
+
+    def init_strategy(self):
+        """
+        Loads in list of starting strategies and chooses one
+        @return random strategy
+        """
+        strats = np.loadtxt('strategies.txt', delimiter=',', dtype=int)
+        return random.choice(strats)
 
     def learn(self, matches, epsilon=1., winners=None, policy=None, render=False, interval=1,):
         """
@@ -66,14 +73,12 @@ class QLearner:
 
             while not done:
                 actions = [
-                    policy(Q=self.Q[p1][s], n_actions=self.n_actions, epsilon=epsilon), 
-                    policy(Q=self.Q[p2][s], n_actions=self.n_actions, epsilon=epsilon)
+                    np.random.randint(self.n_actions), 
+                    policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon)
                 ]
                 rews, s_, actions, done, _ = self.env.step(actions)
-                delta_p1 = rews[0] + self.gamma * self.Q[p1][s_, np.argmax(self.Q[p1][s_])]
-                delta_p2 = rews[1] + self.gamma * self.Q[p2][s_, np.argmax(self.Q[p2][s_])]
-                self.Q[p1][s, actions[0]] = (1 - self.alpha) * self.Q[p1][s, actions[0]] + self.alpha * delta_p1
-                self.Q[p2][s, actions[1]] = (1 - self.alpha) * self.Q[p2][s, actions[1]] + self.alpha * delta_p2
+                delta = rews[1] + self.gamma * self.Q[s_, np.argmax(self.Q[s_])]
+                self.Q[s, actions[1]] = (1 - self.alpha) * self.Q[s, actions[1]] + self.alpha * delta
                 s = s_
 
             epsilon = decay(epsilon)
@@ -85,7 +90,7 @@ class QLearner:
                 self.env.render()
 
         print('Finished training...')
-        return self.Q, winners
+        return self.Q, winners, epsilon
 
     def play(self, epsilon=.001, policy=None):
         """
@@ -97,14 +102,13 @@ class QLearner:
         if policy is None:
             policy = epsilon_greedy
 
-        random_player = random.choice(self.env.players)
         done, s = False, self.env.reset()
 
         self.env.render()
         while not done:
             actions = [
                 int(input('Choose an action: [0-6]:')),
-                policy(Q=self.Q[random_player][s], n_actions=self.n_actions, epsilon=epsilon)
+                policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon)
             ]
 
             r_, s_, actions, done, _ = self.env.step(actions) 

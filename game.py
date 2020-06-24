@@ -2,38 +2,11 @@ from env import *
 from learner import QLearner
 import os, re
 import numpy as np
-from tqdm import tqdm
-
-def best_player(winners, verbose=False):
-    """
-    Determines the best player in a dict/map of winners
-    @param winners dict/map of winners
-    @param verbose True if 
-    """
-    wc = winners.copy()
-
-    if 'None' in wc:
-        del wc['None']
-
-    best_player, best_value = None, 0
-
-    for key, value in wc.items():
-        if best_player is None:
-            best_player = key
-            best_value = value
-        
-        if value > best_value:
-            best_player = key
-            best_value = value
-
-    if verbose:
-        print('Best player: {}'.format(best_player))
-
-    return best_player
 
 def training_data():
     """
-    Traverses training_data directory for the most mature data set,
+    Traverses training_data directory for the data sets inside
+    @return list of data sets
     """
     data_sets, training_data = [], [f for f in os.listdir('training_data/') if os.path.isfile(os.path.join('training_data/', f))]
     for f in training_data:
@@ -43,34 +16,79 @@ def training_data():
     return data_sets
 
 def train(env, base, diff):
-    print('Best player: {}'.format(best_player(winners)))
+    """
+    Trains AI on any missing data, then saves.
+    @env game environment
+    @base highest number of matches recorded
+    @diff number of matches to train AI against
+    """
+    data = np.loadtxt('training_data/{}.csv'.format(base), delimiter=',') if base > 0 else None
+    old_eps = float(open('epsilons/{}.txt'.format(base), 'r').read()) if base > 0 else 1.
+    
+    print('Existing epsilon for {} matches: {}'.format(base, old_eps))
+
+    Q, winners, eps = QLearner(env, Q=data).learn(diff, epsilon=old_eps)
+
+    print('Current epsilon: {}'.format(eps))
+    print('Winners: {}'.format(winners))
+    print('Saving training data on {} matches.'.format(base + diff))
+
+    np.savetxt('training_data/{}.csv'.format(base + diff), Q, delimiter=',')
+    new_eps = open('epsilons/{}.txt'.format(base + diff), 'w')
+    new_eps.write('{}'.format(eps))
+    new_eps.close()
 
 def play(env, matches=None):
-    top_data = max(training_data())
-    data = np.loadtxt('training_data/{}.csv'.format(top_data), delimiter=',')
+    """
+    Starts match with player vs AI.
+    @param env game environment
+    @param matches set of training data to play against
+    """
+    if matches is None:
+        matches = max(training_data())
+    data = np.loadtxt('training_data/{}.csv'.format(matches), delimiter=',')
     winners = QLearner(env, Q=data).play()
-    print('Winners: {}'.format(winners))
+    print('Winner: {}'.format(winners))
 
-def run(env, matches):
-    data = training_data()
+def run(matches, play_game=True, verbose=False):
+    """
+    Runs program and determines whether to train first or play the game immediately.
+    @param env game environment
+    @param matches number of matches played in training data
+    @param verbose if True logs information about training/playing
+    """
+    env = ConnectFour(['P1', 'P2'])
+    data = [0] if not training_data() else training_data()
+
     if matches in data:
-        # Play
-        play(env, matches)
-
+        if play_game:
+            if verbose:
+                print('Playing match based off of {} matches. Skipping training.'.format(matches))
+            
+            play(env, matches)
     elif matches < max(data):
-        # Play with best training data
-        play(env)
+        if play_game:
+            if verbose:
+                print('Couldn\'t find data on {} matches. Instead choosing {} matches. Skipping training.'.format(matches, max(data)))
+            
+            play(env)
     else:
-        # Train then play
         diff = matches - max(data)
-        train(env, base, diff)
-        play(env)
+        
+        if verbose:
+            print('Starting training on an additional {} matches.'.format(diff))
+        
+        train(env, max(data), diff)
+        
+        if play_game:
+            if verbose:
+                print('Playing match based off of {} matches.'.format(matches))
+            
+            play(env)
 
 if __name__ == "__main__":
     np.random.seed(1337) # Seeding data for consistent results
+    player = 'Bob'
+    matches = 100000
 
-    players = ['Gio', 'P2']
-    env = ConnectFour(players)
-    matches = 50000
-
-    run(env, matches)
+    run(matches, play_game=False, verbose=True)
