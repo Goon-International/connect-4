@@ -13,7 +13,10 @@ Feel free to make PRs and suggest improvements.
     - `pip install random` (for random.choice)
     - `pip install os` (for file system)
     - `pip install re` (for regex)
-3. Usage: `python3 game.py`
+3. Usage: 
+    - `python game.py` (runs program with 10k matches of training data)
+    - `python game.py` -m 20000 -p False (trains AI on 20k matches; does not play game after)
+    - `python game.py` --matches=100000 -play True (trains AI on 100k matches; plays game after)
 
 ## Roadmap
 1. ~~Add more documentation to code~~
@@ -21,7 +24,3 @@ Feel free to make PRs and suggest improvements.
 3. ~~Introduce player vs computer (AI)~~
 4. Implement DQN to improve AI performance
 5. Create web UI where players can play against Connect4 bot online (and it learns from playing users)
-
-## Benchmarks
-- Playing 10,000 matches takes 2m24s
-- Playing 15,000 matches takes 3m19s

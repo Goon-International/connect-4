@@ -33,31 +33,31 @@ class QLearner:
         self.env = env
         self.gamma, self.alpha = gamma, alpha
         self.n_states, self.n_actions = env.n_states, env.actions
-        self.strategy, self.step = self.init_strategy(), 0
+        self.strategies, self.step = self.get_strategies(), 0
         
         if Q is None:
             self.Q = np.zeros((self.n_states, self.n_actions))
         else:
             self.Q = Q
 
-    def init_strategy(self):
+    def get_strategies(self):
         """
-        Loads in list of starting strategies and chooses one
-        @return random strategy
+        Loads in list of starting strategies
+        @return the strategies
         """
-        strats = np.loadtxt('strategies.txt', delimiter=',', dtype=int)
-        return random.choice(strats)
+        return np.loadtxt('strategies.txt', delimiter=',', dtype=int)
 
-    def win_strategy(self, policy):
+    def win_strategy(self, match, policy):
         """
         Winning strategy for AI. AI starts by following a move sequence then attempts to defend/win.
         @param policy the policy to follow outside of strategy, and win/lose conditions
         @return action taken after determination
         """
         player, other_player = self.env.players
+        strategy = self.strategies[(match%len(self.strategies))]
 
-        if self.step < len(self.strategy):
-            action = self.strategy[self.step]
+        if self.step < len(strategy):
+            action = strategy[self.step]
             self.step += 1
             
             return action
@@ -125,14 +125,15 @@ class QLearner:
 
             while not done:
                 actions = [
-                    policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon),
-                    self.win_strategy(np.random.randint(self.n_actions))
+                    self.win_strategy(match, np.random.randint(self.n_actions)),
+                    policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon)
                 ]
                 rews, s_, actions, done, _ = self.env.step(actions)
-                delta = rews[0] + self.gamma * self.Q[s_, np.argmax(self.Q[s_])]
-                self.Q[s, actions[0]] = (1 - self.alpha) * self.Q[s, actions[0]] + self.alpha * delta
+                delta = rews[1] + self.gamma * self.Q[s_, np.argmax(self.Q[s_])]
+                self.Q[s, actions[1]] = (1 - self.alpha) * self.Q[s, actions[1]] + self.alpha * delta
                 s = s_
 
+            self.steps = 0
             epsilon = decay(epsilon)
 
             if winners is not None:

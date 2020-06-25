@@ -1,6 +1,6 @@
 from env import *
 from learner import QLearner
-import os, re
+import sys, getopt, os, re
 import numpy as np
 
 def training_data():
@@ -86,9 +86,33 @@ def run(matches, play_game=True, verbose=False):
             
             play(env)
 
+def main(argv):
+    """
+    Parses input arguments to determine whether target or background is used.
+    @param argv command-line arguments
+    @return target and background
+    """
+    matches, play_game = 10000, True
+
+    opts, args = getopt.getopt(argv,"m:p:",["matches=","play_game="])
+
+    for opt, arg in opts:
+        if opt in ("-m", "--matches"):
+            matches = int(arg)
+        if opt in ("-p", "--play_game"):
+            play_game = bool(arg)
+
+    if opts == [] and args == []:
+        print('No options specified.')
+        print('Usage [short]: python3 game.py -m 10000 -p True')
+        print('Usage [long]: python3 game.py --matches=20000 --play_game=False\n')
+
+    return matches, play_game
+
 if __name__ == "__main__":
     np.random.seed(1337) # Seeding data for consistent results
     player = 'Bob'
-    matches = 25000
 
-    run(matches, play_game=True, verbose=True)
+    matches, play_game = main(sys.argv[1:])
+
+    run(matches, play_game=play_game, verbose=True)
