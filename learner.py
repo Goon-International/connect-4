@@ -19,10 +19,11 @@ def epsilon_greedy(Q, n_actions, epsilon):
 def decay(eps):
     """
     Epsilon decay. (min_bound ETA: 1,381,548 matches)
+    Epsilon decay. (min_bound ETA: 138,152 matches)
     @param eps epsilon value to decay
     @return decayed version of eps unless eps is too small
     """
-    decay, min_bound = .999995, .001
+    decay, min_bound = .99995, .001
     new_eps = eps * decay
     
     return new_eps if new_eps > min_bound else min_bound
@@ -32,7 +33,7 @@ class QLearner:
         self.env = env
         self.gamma, self.alpha = gamma, alpha
         self.n_states, self.n_actions = env.n_states, env.actions
-        # self.strategy, self.step = self.init_strategy(), 0
+        self.strategy, self.step = self.init_strategy(), 0
         
         if Q is None:
             self.Q = np.zeros((self.n_states, self.n_actions))
@@ -46,6 +47,57 @@ class QLearner:
         """
         strats = np.loadtxt('strategies.txt', delimiter=',', dtype=int)
         return random.choice(strats)
+
+    def win_strategy(self, policy):
+        """
+        Winning strategy for AI. AI starts by following a move sequence then attempts to defend/win.
+        @param policy the policy to follow outside of strategy, and win/lose conditions
+        @return action taken after determination
+        """
+        player, other_player = self.env.players
+
+        if self.step < len(self.strategy):
+            action = self.strategy[self.step]
+            self.step += 1
+            
+            return action
+        else:
+            op_connections, op_connection_type, op_is_connected = self.env.is_connected(other_player, 3)
+            connections, connection_type, is_connected = self.env.is_connected(player, 3)
+            if op_is_connected:
+                # Defend
+                if op_connection_type == 'vertical':
+                    return op_connections[0][0]
+                elif op_connection_type == 'horizontal':
+                    left = (op_connections[0][0]-1, op_connections[0][1])
+                    right = (op_connections[0][0]+1, op_connections[0][1])
+                    
+                    if left[0] >= 0 and self.env.board[left[0], left[1]] == 0:
+                        return left[0]
+                    elif right[0] < self.env.columns and self.env.board[right[0], right[1]] == 0:
+                        return right[0]
+                    
+                    return op_connections[0][1]
+                # elif op_connection_type == 'diagonal':
+                    # TODO: Implement later
+            elif is_connected:
+                # Go for win
+                if connection_type == 'vertical':
+                    return connections[0][0]
+                elif connection_type == 'horizontal':
+                    left = (connections[0][0]-1, connections[0][1])
+                    right = (connections[0][0]+1, connections[0][1])
+                    
+                    if left[0] >= 0 and self.env.board[left[0], left[1]] == 0:
+                        return left[0]
+                    elif right[0] < self.env.columns and self.env.board[right[0], right[1]] == 0:
+                        return right[0]
+                    
+                    return connections[0][1]
+                # elif connection_type == 'diagonal':
+                    # TODO: Implement later
+
+            return policy
 
     def learn(self, matches, epsilon=1., winners=None, policy=None, render=False, interval=1,):
         """
@@ -73,12 +125,12 @@ class QLearner:
 
             while not done:
                 actions = [
-                    np.random.randint(self.n_actions), 
-                    policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon)
+                    policy(Q=self.Q[s], n_actions=self.n_actions, epsilon=epsilon),
+                    self.win_strategy(np.random.randint(self.n_actions))
                 ]
                 rews, s_, actions, done, _ = self.env.step(actions)
-                delta = rews[1] + self.gamma * self.Q[s_, np.argmax(self.Q[s_])]
-                self.Q[s, actions[1]] = (1 - self.alpha) * self.Q[s, actions[1]] + self.alpha * delta
+                delta = rews[0] + self.gamma * self.Q[s_, np.argmax(self.Q[s_])]
+                self.Q[s, actions[0]] = (1 - self.alpha) * self.Q[s, actions[0]] + self.alpha * delta
                 s = s_
 
             epsilon = decay(epsilon)

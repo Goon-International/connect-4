@@ -89,6 +89,6 @@ def run(matches, play_game=True, verbose=False):
 if __name__ == "__main__":
     np.random.seed(1337) # Seeding data for consistent results
     player = 'Bob'
-    matches = 100000
+    matches = 25000
 
-    run(matches, play_game=False, verbose=True)
+    run(matches, play_game=True, verbose=True)

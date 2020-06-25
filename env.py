@@ -82,7 +82,7 @@ class ConnectFour:
         @return True if player has conns number of connected pieces
         """
         player_pos = self.players.index(player) + 1
-        connected = False
+        connections, connected, connection_type = [], None, False
 
         # Right diag
         for col in range(0, conns):
@@ -92,10 +92,8 @@ class ConnectFour:
                 for n in range(conns):
                     joints.append((col+n, row-n))
 
-                connected = connected or self.on_board(
-                    player_pos, 
-                    joints
-                )
+                if self.on_board(player_pos, joints):
+                    connections, connection_type, connected = joints, 'diagonal', True
 
                 if connected:
                     break
@@ -109,10 +107,8 @@ class ConnectFour:
                     for n in range(conns):
                         joints.append((col-n, row-n))
 
-                    connected = connected or self.on_board(
-                        player_pos, 
-                        joints
-                    )
+                    if self.on_board(player_pos, joints):
+                        connections, connection_type, connected = joints,  'diagonal', True
 
                     if connected:
                         break
@@ -126,10 +122,8 @@ class ConnectFour:
                     for n in range(conns):
                         joints.append((col, row-n))
                     
-                    connected = connected or self.on_board(
-                        player_pos, 
-                        joints
-                    )
+                    if self.on_board(player_pos, joints):
+                        connections, connection_type, connected = joints, 'vertical', True
 
                     if connected:
                         break
@@ -143,15 +137,13 @@ class ConnectFour:
                     for n in range(conns):
                         joints.append((col+n, row))
                     
-                    connected = connected or self.on_board(
-                        player_pos, 
-                        joints
-                    )
+                    if self.on_board(player_pos, joints):
+                        connections, connection_type, connected = joints, 'horizontal', True
 
                     if connected:
                         break
 
-        return connected
+        return connections, connection_type, connected
     
     def is_tie(self):
         """
@@ -197,7 +189,9 @@ class ConnectFour:
                 else:
                     actions[index] = policy(self.actions)
             
-            if self.is_connected(player):
+            _conns, _ctype, connected = self.is_connected(player)
+
+            if connected:
                 self.winner = player
                 complement = (index + 1) % 2
                 rewards[index], rewards[complement] = 1., -1.
