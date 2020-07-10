@@ -8,15 +8,14 @@ Feel free to make PRs and suggest improvements.
 1. Have Python (and pip) installed (I use Python 3.x)
 2. Install the dependencies:
     - `pip install numpy` (for Math stuff)
-    - `pip install numexpr` (speed up mathy operations)
     - `pip install tqdm` (for progress bar)
     - `pip install random` (for random.choice)
     - `pip install os` (for file system)
     - `pip install re` (for regex)
 3. Usage: 
     - `python game.py` (runs program with 10k matches of training data)
-    - `python game.py` -m 20000 -p False (trains AI on 20k matches; does not play game after)
-    - `python game.py` --matches=100000 -play True (trains AI on 100k matches; plays game after)
+    - `python game.py -m 20000 -p False` (trains AI on 20k matches; does not play game after)
+    - `python game.py --matches=100000 -play True` (trains AI on 100k matches; plays game after)
 
 ## Roadmap
 1. ~~Add more documentation to code~~
