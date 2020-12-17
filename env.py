@@ -4,7 +4,7 @@ class ConnectFour:
     def __init__(self, players):
         self.columns, self.rows,  = 7, 6
         self.positions = self.init_positions()
-        self.n_states = len(self.positions) ** 3
+        self.n_states = len(self.positions) ** 2
         self.actions, self.players = self.columns, players
         self.board = np.zeros((self.columns, self.rows), dtype=int)
         self.stacks = np.ones((self.columns), dtype=int) * self.rows - 1
@@ -188,7 +188,7 @@ class ConnectFour:
                     inserted = True
                 else:
                     actions[index] = policy(self.actions)
-            
+
             _conns, _ctype, connected = self.is_connected(player)
 
             if connected:
