@@ -22,4 +22,7 @@ Feel free to make PRs and suggest improvements.
 2. ~~Save AI state to resume training from previous point~~
 3. ~~Introduce player vs computer (AI)~~
 4. Implement DQN to improve AI performance
-5. Create web UI where players can play against Connect4 bot online (and it learns from playing users)
+5. Create web UI where players can play against Connect4 agent online
+6. Agent learns from online players
+7. Introduce PvP mode 
+8. Agent can observe PvP games and learn from them
